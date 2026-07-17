@@ -3,11 +3,19 @@
 验证内容:
 1. 标注数据(data/final/cleaned/equal/*.jsonl)的真实字段与规模
 2. 未标注聊天(data/chat_cleaned.json)的真实字段与规模
-3. 产出 H 维(求助与交互)画像特征示例:
+3. 产出 H 维(求助与交互)候选特征示例:
    - 问题类型分布(questionType)
    - 学生主动提问 vs 助教发起 的比例(questioner)
-   - 按学生聚合的求助频率与追问深度(会话消息轮次)
-     —— 即"每个学习者一份"的 H 维特征雏形。
+   - 按学生聚合:观察期内会话总数、每会话平均消息数(含双方)、
+     每会话学生侧消息数(追问轮次的近似上界)
+     —— CS1QA 含匿名学生 ID,可按学生聚合,是最接近
+     "每个学习者一份 user profile"的公开数据。
+
+口径说明:
+ - "每会话平均消息数"统计 comments 全部消息(学生 + 助教),不等于追问深度;
+ - "学生侧消息数"只数 user_id == student_user_id 的消息,可视为
+   学生提问/追问轮次的近似(仍含粘贴代码等非提问消息,属上界);
+ - "人均会话数"是整个数据集观察期(约一学期)内的总数,不是每周频率。
 
 用法: python3 scripts/verify_cs1qa.py <cs1qa_repo_path>
 """
@@ -44,26 +52,30 @@ def verify_chat(repo, top_n=5):
     print(f"\n[未标注聊天] {len(chats)} 个会话")
     print(f"  会话级字段: {list(chats[0].keys())}")
 
-    per_student = defaultdict(lambda: {"sessions": 0, "msgs": 0})
+    per_student = defaultdict(lambda: {"sessions": 0, "msgs": 0, "stu_msgs": 0})
     for c in chats:
         sid = c.get("student_user_id")
-        n_msg = len(c.get("comments") or [])
+        comments = c.get("comments") or []
         per_student[sid]["sessions"] += 1
-        per_student[sid]["msgs"] += n_msg
+        per_student[sid]["msgs"] += len(comments)
+        per_student[sid]["stu_msgs"] += sum(
+            1 for m in comments if m.get("user_id") == sid)
 
     n_students = len(per_student)
     sess = [v["sessions"] for v in per_student.values()]
-    depth = [v["msgs"] / v["sessions"] for v in per_student.values()]
+    msgs = [v["msgs"] / v["sessions"] for v in per_student.values()]
+    stu = [v["stu_msgs"] / v["sessions"] for v in per_student.values()]
     print(f"  覆盖学生数: {n_students}")
-    print(f"  人均求助会话数: {sum(sess)/n_students:.1f}(最多 {max(sess)})")
-    print(f"  人均每会话消息轮次(追问深度): {sum(depth)/n_students:.1f}")
+    print(f"  人均求助会话数(整个观察期): {sum(sess)/n_students:.1f}(最多 {max(sess)})")
+    print(f"  每会话平均消息数(含学生与助教双方): {sum(msgs)/n_students:.1f}")
+    print(f"  每会话学生侧消息数(追问轮次近似上界): {sum(stu)/n_students:.1f}")
 
-    print(f"\n[H 维特征示例] 求助最频繁的 {top_n} 名学生(匿名 ID):")
+    print(f"\n[H 维候选特征示例] 求助最频繁的 {top_n} 名学生(匿名 ID):")
     ranked = sorted(per_student.items(), key=lambda kv: -kv[1]["sessions"])
     for sid, v in ranked[:top_n]:
-        print(f"    student_{sid}: 求助 {v['sessions']} 次,"
-              f"平均追问深度 {v['msgs']/v['sessions']:.1f} 轮"
-              f" -> 可映射为 H 维'求助频率/依赖度'标签")
+        print(f"    student_{sid}: 观察期求助 {v['sessions']} 次,"
+              f"每会话学生侧消息 {v['stu_msgs']/v['sessions']:.1f} 条"
+              f" -> 候选 H 维'求助频率/交互密度'特征")
 
 if __name__ == "__main__":
     repo = sys.argv[1]
