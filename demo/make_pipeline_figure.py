@@ -24,9 +24,9 @@ steps = [
     ("修复完成", "通过全部测试", "#E8F5E9", "#2E7D32"),
 ]
 
-fig, ax = plt.subplots(figsize=(13, 4.2), dpi=170)
+fig, ax = plt.subplots(figsize=(13, 3.2), dpi=170)
 ax.set_xlim(0, len(steps) * 2.0)
-ax.set_ylim(0, 4.2)
+ax.set_ylim(0.85, 4.35)
 ax.axis("off")
 
 box_w, box_h, y = 1.7, 1.15, 2.4
@@ -50,15 +50,15 @@ for i, (title, sub, fill, edge) in enumerate(steps):
             arrowstyle="-|>", mutation_scale=18,
             linewidth=1.8, color="#555555"))
 
-# "定位 + 修复"循环回线:从 Repairer 底部回到 Fault Locator 底部
+# "定位 + 修复"循环回线:从 Repairer 底部向下绕行,回到 Fault Locator 底部
 fl_cx, rp_cx = centers[4], centers[5]
 ax.add_patch(FancyArrowPatch(
-    (rp_cx, y), (fl_cx, y),
-    connectionstyle="arc3,rad=0.45", arrowstyle="-|>",
+    (rp_cx, y - 0.05), (fl_cx, y - 0.05),
+    connectionstyle="arc3,rad=-0.55", arrowstyle="-|>",
     mutation_scale=16, linewidth=1.8, color="#AD1457", linestyle=(0, (5, 3))))
-ax.text((fl_cx + rp_cx) / 2, y - 0.95,
+ax.text((fl_cx + rp_cx) / 2, y - 1.05,
         "定位 + 修复反复循环,直到通过全部测试",
-        ha="center", va="center", fontproperties=zh,
+        ha="center", va="top", fontproperties=zh,
         fontsize=9.5, color="#AD1457")
 
 ax.text(centers[0], y + box_h + 0.45,
