@@ -41,6 +41,7 @@ def search(x, seq):
         "diagnosis": "比较用了严格小于 `x < e`,漏掉了 x 等于当前元素的情况;"
                      "题目要求 x 等于某元素时也应停在该位置,应为 `x <= e`。",
         "fault_line": 3,          # if x < e:
+        "fault_region": "循环里的比较判断",   # 粗粒度定位(BRAFAR 复合块级)
         "min_fix_hint": "`<` 改为 `<=`",
         "concept_hint": "「严格小于 <」和「小于等于 <=」在边界(相等)时行为不同,"
                         "查找类问题要特别小心 = 这个临界点。",
@@ -68,6 +69,7 @@ def search(x, seq):
                      "变量 i 从未被赋值,触发 UnboundLocalError;"
                      "且非空时正确的兜底应是 `len(seq)` 而不是 `i + 1`。",
         "fault_line": 5,          # return i + 1
+        "fault_region": "循环结束之后的返回语句",  # 粗粒度定位(BRAFAR 复合块级)
         "min_fix_hint": "`return i + 1` 改为 `return len(seq)`",
         "concept_hint": "循环里定义的变量,在循环一次都没执行时是「不存在」的;"
                         "依赖循环变量做兜底返回是危险的,应改用与循环无关的量。",
@@ -100,6 +102,7 @@ def search(x, seq):
                      "空序列时立即 IndexError;整体思路(分三段判断)也比参考实现"
                      "复杂、易漏边界,BRAFAR 会先做结构对齐再定位。",
         "fault_line": 2,          # if x < seq[0]:
+        "fault_region": "函数开头对序列的下标访问",  # 粗粒度定位(BRAFAR 复合块级)
         "min_fix_hint": "进入下标访问前先判空:`if not seq: return 0`",
         "concept_hint": "用下标或 seq[0]/seq[-1] 访问序列前,必须先确认它非空;"
                         "空序列是最常见、最容易被忽略的边界。",

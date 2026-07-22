@@ -1,18 +1,27 @@
-"""画像、规则与分级反馈模板 —— 【黄新意负责填充】
+"""画像、规则与分级话术片段 —— 【黄新意负责填充/打磨】(重做版 v2)
 
-本文件是 demo 的"可替换插槽"。房年朗已把结构和一份**示例填充**写好,
-黄新意需要做的是:
-  1. 核定/改写 3 份模拟画像 PROFILES(四维 K/D/H/E + 水平标签)
-  2. 筛选/改写 6 条规则 RULES(画像特征 -> 反馈风格参数)
-  3. 打磨 3 档分级反馈模板 TEMPLATES(新手/进阶/熟练三档的话术)
+本文件是 demo 的"可替换插槽",黄新意只改这一个文件。三块内容:
+  1. PROFILES   3 份模拟画像(四维 K/D/H/E + 说明)
+  2. RULES      6 条规则:画像特征 -> 反馈风格四旋钮
+  3. 话术片段   开场白 / 定位说法 / 收尾引导(按旋钮取值组织)
 
-下面的内容是房年朗给的**初稿示例**,保证 demo 能跑;黄新意可直接在原处修改。
+v2 相比第一版的变化(房年朗):
+  第一版的三段模板把风格"写死"在话术里,四个旋钮算出来却只用了一个。
+  v2 把话术拆成按旋钮取值索引的片段,demo.py 负责按旋钮组装 ——
+  规则改哪个旋钮,输出就真的变哪里,"画像改变反馈"变得可检验、可解释。
+
 四维画像含义(与申报书一致):
   K 知识基础、D 调试与执行、E 学习演化 —— 取值 low / mid / high
   H 求助与交互 —— 依赖程度 high_dependence / balanced / independent
+
+风格四旋钮(对应 BRAFAR 诊断粒度 -> 反馈强度的映射):
+  explain_depth   解释深度: concept(补概念) / step(讲原因) / minimal(不展开)
+  code_supply     代码供给: none(不给码) / snippet(给方向) / full_patch(给补丁)
+  guide_strength  引导强度: strong(粗定位+反问) / medium(行号+方向) / weak(直给)
+  tone            语气:     gentle(鼓励通俗) / neutral(平实) / terse(简洁专业)
 """
 
-# ── 1. 三份模拟画像(黄新意可调整取值与命名)──────────────────────
+# ── 1. 三份模拟画像 ──────────────────────────────────────────────
 PROFILES = {
     "novice": {
         "name": "新手型 · 小 A",
@@ -31,42 +40,43 @@ PROFILES = {
     },
 }
 
-# ── 2. 六条规则:画像特征 -> 反馈风格 ────────────────────────────
-# 每条规则是 (条件函数, 风格增量) ;命中即把增量并入 style。
-# 风格四个旋钮(对应 BRAFAR 诊断粒度 -> 反馈强度的映射):
-#   explain_depth   解释粒度: concept(补概念) / step(讲步骤) / minimal(只点关键)
-#   code_supply     代码供给: none(不给码) / snippet(局部) / full_patch(完整补丁)
-#   guide_strength  引导强度: strong(强引导,多问少答) / medium / weak(直给)
-#   tone            语言风格: gentle(通俗鼓励) / neutral / terse(简洁专业)
+# ── 2. 六条规则:画像特征 -> 风格旋钮 ────────────────────────────
+# 每条规则 = (名字, 条件函数, 命中后并入 style 的增量)
 RULES = [
-    ("K_low_needs_concept",
+    # R1 知识薄弱 → 反馈里要补概念,语气放软
+    ("R1_K低_补概念",
      lambda p: p["K"] == "low",
      {"explain_depth": "concept", "tone": "gentle"}),
 
-    ("D_low_no_full_code",
+    # R2 调试能力弱 → 不给代码,粗定位强引导(让他练定位)
+    ("R2_D低_不给码强引导",
      lambda p: p["D"] == "low",
      {"code_supply": "none", "guide_strength": "strong"}),
 
-    ("H_dependence_resist_answer",
+    # R3 高依赖 → 越要答案越不直接给,守住引导(防"拿到代码但没理解")
+    ("R3_H高依赖_抵住直给",
      lambda p: p["H"] == "high_dependence",
-     {"guide_strength": "strong"}),  # 越依赖越不能直接喂答案,反而强引导
+     {"guide_strength": "strong", "code_supply": "none"}),
 
-    ("D_mid_give_hint",
+    # R4 调试能力中等 → 行号+方向+讲清原因,不给整段
+    ("R4_D中_行号加方向",
      lambda p: p["D"] == "mid",
      {"code_supply": "snippet", "guide_strength": "medium",
       "explain_depth": "step"}),
 
-    ("D_high_give_patch",
+    # R5 调试能力强 → 直接最小补丁,不展开解释
+    ("R5_D高_直接补丁",
      lambda p: p["D"] == "high",
      {"code_supply": "full_patch", "guide_strength": "weak",
       "explain_depth": "minimal", "tone": "terse"}),
 
-    ("E_high_can_be_brief",
+    # R6 演化良好 → 语气可以更简,减少重复叮嘱
+    ("R6_E高_从简",
      lambda p: p["E"] == "high",
      {"tone": "terse"}),
 ]
 
-# 默认风格(所有规则都没命中时的兜底)
+# 默认风格(规则都没命中时的兜底)
 DEFAULT_STYLE = {
     "explain_depth": "step",
     "code_supply": "snippet",
@@ -74,37 +84,34 @@ DEFAULT_STYLE = {
     "tone": "neutral",
 }
 
-# ── 3. 三档分级反馈模板(黄新意打磨话术)────────────────────────
-# 模板按 guide_strength 选档;用诊断信息 diag 填空。
-# diag 字段来自错误案例:error_class / diagnosis / fault_line / min_fix_hint / patched
-def template_strong(diag):
-    """新手档:补概念、只给方向和提示,绝不直接给答案。"""
-    return (
-        f"先别急着改代码,我们一起想一想 🙂\n"
-        f"你的程序在「{diag['error_class']}」上出了问题。\n"
-        f"提示:注意第 {diag['fault_line']} 行附近——"
-        f"{diag['concept_hint']}\n"
-        f"你可以先问自己:这一行在什么情况下会得到不符合预期的结果?"
-        f"想清楚后自己改改看,改完再运行测试。"
-    )
+# ── 3. 分级话术片段(黄新意打磨文字;键 = 旋钮取值)──────────────
+# 开场白:按语气
+OPENINGS = {
+    "gentle": "别急,这个错误很多同学都会遇到,我们一步步来 🙂",
+    "neutral": "运行没有全部通过,来看一下问题。",
+    "terse": "",  # 简洁风格不放开场白
+}
 
-def template_medium(diag):
-    """进阶档:指出位置 + 给方向性提示 + 局部片段,不给完整答案。"""
-    return (
-        f"问题出在第 {diag['fault_line']} 行:{diag['diagnosis']}\n"
-        f"修改方向:{diag['min_fix_hint']}。\n"
-        f"你先按这个方向试,想想为什么这样改能覆盖之前漏掉的情况。"
-    )
+# 定位说法:按引导强度(对应 BRAFAR 由粗到细的定位深度)
+#   strong -> 只给粗粒度区域(复合块级),让学习者自己缩小范围
+#   medium -> 给到行号(基本块/语句级)
+#   weak   -> 行号 + 最小改法(补丁级)
+def locate_strong(diag):
+    return (f"问题出在「{diag['fault_region']}」附近,类型是"
+            f"{diag['error_class']}。先自己找找具体是哪一行。")
 
-def template_weak(diag):
-    """熟练档:直接给最小补丁 + 一句关键差异,简洁。"""
-    return (
-        f"第 {diag['fault_line']} 行:{diag['min_fix_hint']}。\n"
-        f"最小修复后:\n{diag['patched']}"
-    )
+def locate_medium(diag):
+    return f"问题在第 {diag['fault_line']} 行,类型是{diag['error_class']}。"
 
-TEMPLATES = {
-    "strong": template_strong,
-    "medium": template_medium,
-    "weak": template_weak,
+def locate_weak(diag):
+    return f"第 {diag['fault_line']} 行:{diag['min_fix_hint']}。"
+
+LOCATION = {"strong": locate_strong, "medium": locate_medium, "weak": locate_weak}
+
+# 收尾引导:按引导强度
+CLOSINGS = {
+    "strong": "想一想:这一行在什么输入下会得到不符合预期的结果?"
+              "自己改一版,跑一遍测试再看。",
+    "medium": "按这个方向自己改改看,并想想为什么这样能覆盖漏掉的情况。",
+    "weak": "",  # 直给档不需要引导语
 }
