@@ -34,8 +34,26 @@
 - 对本项目的启示:反馈要保留学生思路、最小修改、易于理解;先分析再帮助(找参考→对齐→定位→局部修复 ≈ 读画像→判断状态→选策略→个性化反馈);不同水平学习者应获得不同力度的帮助
 - 代码:https://github.com/LinnaX7/brafar-python
 
+## 当前进度与协作现状(2026-07-23 更新)
+- **团队协作已迁移到 Gitee**。正式团队仓库:`https://gitee.com/huangxinyi2007/personalized-code-assistant`(默认分支 master,受保护,需 PR + 黄新意审核才能合并)
+- **各成员任务分支**:
+  - 房年朗:`feat/fnl-error-cases` —— 在 demo/ 目录提交 3 个 Python 错误案例 + 技术诊断 + 验证方法
+  - 李镐泓:`exp/lhh-telemetry-validation` —— experiments/ 目录,VS Code 采集插件运行步骤、脱敏 JSONL、采集能力对照
+  - 王小芮:`data/wxr-profile-mapping` —— data/ 目录,"原始字段—画像指标—判断规则—局限"映射表 + 三份模拟画像
+  - 黄新意:`feat/hxy-feedback-rules` —— 画像 / 规则 / 分级反馈模板
+- **房年朗第二轮任务状态:已完成并发 PR**。PR #1「[房年朗] demo:3个Python错误案例 + 技术诊断 + 验证方法」已提交,等黄新意审核合并(demo/cases/cases.py + demo/run_case_check.py)
+- 房年朗个人 Gitee 镜像仓库:`Francis-shift/111`(内容在 claude/session-2lvlke 分支)
+- **本项目云端成果的权威副本 = GitHub `francis-shift/1` 的 `claude/session-2lvlke` 分支**(含本 CLAUDE.md、docs/、demo/、scripts/ 全部内容)
+- **决定(2026-07-23):今后转为本地开发,不再用云端会话**
+
+## demo 设计(画像驱动个性化反馈,第一版)
+- 目录 `demo/`:cases/cases.py(3 个真实错误案例+诊断包)、run_case_check.py(验证)、demo.py(引擎)、profiles_and_rules.py(黄新意的画像/规则/模板插槽)
+- 核心链路:错误诊断包(客观,对所有人相同)+ 学习者画像 --6条规则--> 风格四旋钮(定位深度/解释深度/代码供给/语气)--话术片段--> 个性化反馈
+- 已验证:同一错误 × 3 画像 → 3 份两两不同的反馈(机器断言),证明"画像能改变反馈方式"
+- 3 个错误案例取自 Refactory 公开数据集 question_1,均实测复现失败(边界错/UnboundLocalError/IndexError)
+
 ## 协作约定
-- 开发分支:claude/session-2lvlke;推送用 `git push -u origin <branch>`
+- 云端开发分支:claude/session-2lvlke;推送用 `git push -u origin <branch>`
 - **文件交付方式(房年朗 2026-07-18 约定,目标是"由 Claude 直接放到桌面")**:
   - 会话运行在**用户本机**时(本地 Claude Code):生成/更新的文件直接复制到桌面(如 `~/Desktop` 或 Windows 桌面),同名文件**直接覆盖**,不询问
   - 会话运行在**云端**时(无法触达用户电脑):退而求其次,生成后立即主动以附件发出新版,不询问、不等用户索要
