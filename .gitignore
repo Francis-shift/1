@@ -1,0 +1,16 @@
+# Python 编译产物
+__pycache__/
+*.pyc
+
+# 数据集不入库(体积大、许可各异),克隆到仓库外再以路径参数传入
+# 详见 scripts/README.md
+refactory/
+cs1qa/
+brafar-python/
+
+# 环境与编辑器
+.venv/
+venv/
+.vscode/
+.DS_Store
+Thumbs.db

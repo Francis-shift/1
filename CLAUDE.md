@@ -32,19 +32,52 @@
 - 流程:Searcher(找最接近的正确程序)→ Bidirectional Refactoring(双向语义保持重构对齐控制流)→ Aligner(块/变量对齐)→ Fault Locator(由粗到细定位可疑基本块,基于规格推断)→ Repairer(语句匹配 + 最小补丁),循环直到通过全部测试
 - 结果:1783 个真实错误程序上修复率 98.5%,平均 0.35s,相对补丁尺寸 0.28,优于 Refactory 与 Clara;ChatGPT 实验表明补充测试用例与参考程序可大幅提升 LLM 修复率
 - 对本项目的启示:反馈要保留学生思路、最小修改、易于理解;先分析再帮助(找参考→对齐→定位→局部修复 ≈ 读画像→判断状态→选策略→个性化反馈);不同水平学习者应获得不同力度的帮助
+- **本项目相对它的定位(一句话记牢)**:**BRAFAR 解决"改什么";我们解决"怎么讲、讲多少、对谁讲"**。诊断包对所有学习者是同一份(错误是客观的),画像层决定从中取哪些字段、讲多深、给不给代码——这就是本项目的增量与差异化立足点,汇报、开题、结项材料都可以用这句话开场
 - 代码:https://github.com/LinnaX7/brafar-python
 
-## 当前进度与协作现状(2026-07-23 更新)
+## 当前进度与协作现状(2026-07-28 更新)
 - **团队协作已迁移到 Gitee**。正式团队仓库:`https://gitee.com/huangxinyi2007/personalized-code-assistant`(默认分支 master,受保护,需 PR + 黄新意审核才能合并)
-- **各成员任务分支**:
-  - 房年朗:`feat/fnl-error-cases` —— 在 demo/ 目录提交 3 个 Python 错误案例 + 技术诊断 + 验证方法
-  - 李镐泓:`exp/lhh-telemetry-validation` —— experiments/ 目录,VS Code 采集插件运行步骤、脱敏 JSONL、采集能力对照
-  - 王小芮:`data/wxr-profile-mapping` —— data/ 目录,"原始字段—画像指标—判断规则—局限"映射表 + 三份模拟画像
-  - 黄新意:`feat/hxy-feedback-rules` —— 画像 / 规则 / 分级反馈模板
-- **房年朗第二轮任务状态:已完成并发 PR**。PR #1「[房年朗] demo:3个Python错误案例 + 技术诊断 + 验证方法」已提交,等黄新意审核合并(demo/cases/cases.py + demo/run_case_check.py)
+- **本地两个仓库**:成果与记忆在 `C:\Users\93581\Desktop\1`(GitHub `francis-shift/1`,分支 claude/session-2lvlke);团队协作在 `C:\Users\93581\Desktop\personalized-code-assistant`(Gitee)。注意 `C:\Users\93581\Documents\1` 是同名空仓库,与本项目无关
+- **各成员任务分支与 PR 状态**:
+  - 房年朗:`feat/fnl-error-cases` / **PR #1 仍未合并**,已按评审意见更新过一次(见下)
+  - 李镐泓:`exp/lhh-telemetry-validation` / PR #2 仍未合并
+  - 黄新意:`feat/hxy-feedback-rules` / **PR #3 已合并进 master**
+  - 王小芮:`data/wxr-profile-mapping`(提交署名 DataDoc)/ **PR #4 已合并进 master**
 - 房年朗个人 Gitee 镜像仓库:`Francis-shift/111`(内容在 claude/session-2lvlke 分支)
-- **本项目云端成果的权威副本 = GitHub `francis-shift/1` 的 `claude/session-2lvlke` 分支**(含本 CLAUDE.md、docs/、demo/、scripts/ 全部内容)
+- **本项目云端成果的权威副本 = GitHub `francis-shift/1` 的 `claude/session-2lvlke` 分支**
 - **决定(2026-07-23):今后转为本地开发,不再用云端会话**
+- **Gitee 访问坑**:未登录时网页 403、API v5 返回 `{"message":"Not Found Project"}`,**查不到 PR 页面和评审意见**;但 `git ls-remote` / clone / push 走 git 协议可匿名访问。判断 PR 是否合并用 `git rev-list --count origin/master..origin/<分支>`,别因 API 报错就断定仓库不存在。评审意见只能靠房年朗截图或登录浏览器取
+
+## 两套反馈架构的关系(重要,别再搞混)
+- **黄新意的 L1—L4 分级**(`demo/feedback_rules.py`,已合并进 master)= **团队主线**。统一接口 `generate_feedback(profile, diagnosis)`,诊断包必需字段:`case_id / error_class / fault_line / fault_region / diagnosis / min_fix_hint / concept_hint / patched`(注意他要 `case_id`,房年朗的 cases.py 里是 `id`,由他的 `run_feedback_demo.py` 做转换适配)
+- **房年朗的风格四旋钮**(`demo/demo.py` + `demo/profiles_and_rules.py`)= **只留在 GitHub 个人仓库**,不进团队仓库,避免一个仓库里两套竞争的规则引擎
+- **2026-07-28 决定**:团队仓库里房年朗的 `demo/demo.py` 改写为**端到端集成脚本**——先跑 run_case_check 实测错误案例真会失败 → 诊断包 → 交给黄新意的画像层 → 3 案例 × 3 画像矩阵 + 两条机器断言(三份反馈两两不同、三份客观诊断一致)。复用他的 `load_demo_cases()`,不另造规则引擎
+
+## ⚠️ 分级方向(最容易搞反的一条,写在最显眼处)
+**帮助力度随调试能力递减,不是递增。**
+- 调试能力**强** → L1 只给粗区域/检查方向,不给码(他自己能收敛,讲细反而打断排查思路)
+- 中等 → L2 给行号 + 错误类别 + 启发式问题,不给改法
+- 基础或调试能力**弱** → L3 给具体位置、原因、概念解释与最小修改提示(他缺的正是这些)
+- L4 展示完整修复代码**由状态触发而非能力**:连续多次失败且长期卡住才升级;且高 AI 依赖者封顶 L3
+- 权威实现 = 团队仓库 `demo/feedback_rules.py`;设计说明见 `docs/hxy_feedback_rules.md`
+- 房年朗早期的全部文档与四旋钮代码都把方向写反了(粗给新手、补丁给熟练者),2026-07-28 已全部更正
+
+## PR #1 评审与修复记录(截至 2026-07-28,均已修完并推送)
+**黄新意 07-25 的 6 条行级评审意见**(逐条实测确认成立后修改,提交 `8a79a4c`):
+1. **case3 的 `patched` 本身是错的**(最严重)。实测三处不符:x 等于首元素返回 1(应 0)、单元素且相等返回 `None`、全重复且相等返回 1。修法:先判空 + `x < seq[0]`→`x <= seq[0]` + `x >= seq_enum[j][1]`→`x > seq_enum[j][1]`
+2. **case2 诊断文字有事实错误**。"非空时兜底应是 `len(seq)` 而不是 `i+1`"不成立——循环走完后 `i = len(seq)-1`,`i+1` 恒等于 `len(seq)`;真正缺陷只有空序列
+3. **`run_case_check.py` 没检查 `patched`**,是第 1 条得以混过的原因。已升级为三段式:reference 全过 / buggy 以预期方式失败(新增 `expect_fail` 字段核对)/ patched 全过
+4. 补齐子进程四类异常:超时、无输出、JSON 解析失败、子进程异常,均转可读 `modes` 返回
+5. **`✓`/`✗` 在 GBK 终端崩溃**,全改 ASCII `pass`/`fail`(demo.py 有同样问题,一并修)
+6. 补充 Refactory 准确出处:commit `f05583a56c2e3c50aa8cc0327645283f27df3a68`(2022-08-16),`data/question_1/code/wrong/wrong_1_{001,002,004}.py`
+
+**黄新意 07-28 对技术诊断文档的 2 条评论**(提交 `35129cf`):
+7. 定位粒度的分级方向写反了(见上方"分级方向"一节)
+8. **夸大了 BRAFAR 的输出**。BRAFAR 只产出可疑基本块、块级修复操作、修复后程序;中文错误分类、教学化原因说明、概念解释、反馈等级都是本项目自定义的接口字段,靠人工整理。接口表已新增"来源"列逐字段标明
+
+**两条教训(反复踩到的)**:
+- 验证只证明了"错的是错的",没证明"对的是对的" —— 自检必须同时验 patched;而且**光加检查还不够**,旧的 4 组测试根本碰不到出错边界,必须配套补边界测试(实测:旧补丁在旧测试 4/4 通过、在新测试 8/11 失败)
+- **不要给自己开小灶**:此前一直用 `PYTHONIOENCODING=utf-8` 跑测试,把编码问题屏蔽掉了。验证要按队友的默认终端来
 
 ## demo 设计(画像驱动个性化反馈,第一版)
 - 目录 `demo/`:cases/cases.py(3 个真实错误案例+诊断包)、run_case_check.py(验证)、demo.py(引擎)、profiles_and_rules.py(黄新意的画像/规则/模板插槽)
@@ -52,8 +85,33 @@
 - 已验证:同一错误 × 3 画像 → 3 份两两不同的反馈(机器断言),证明"画像能改变反馈方式"
 - 3 个错误案例取自 Refactory 公开数据集 question_1,均实测复现失败(边界错/UnboundLocalError/IndexError)
 
+## 交付物索引(仓库里有什么、该翻哪一份)
+
+> 权威副本 = GitHub `francis-shift/1` 的 `claude/session-2lvlke` 分支;本地克隆在 `C:\Users\93581\Desktop\1`。
+> 注意:Gitee 团队仓库目前只有 `demo/cases/cases.py` 与 `demo/run_case_check.py`(PR #1),
+> `demo.py`、`profiles_and_rules.py` 与 docs/ 全部文档**只在 GitHub 这边**,队友在 Gitee 上跑不出完整 demo。
+
+**docs/ —— 研读、调研与教学材料**
+- `BRAFAR论文对本项目的用处.md`:讲**战略价值**。五层用处(① 先分析再帮助的思想框架 ② 好反馈四条标准 → 设计原则 + 可量化指标 RPS/修复质量分级 ③ 由粗到细的定位梯度 = 引导强度刻度 ④ 实测后可当修复引擎零件,并附带 Refactory 试验场 ⑤ 其 ChatGPT 实验 58.2%→85.0%→87.6% 论证了策略控制器的必要性),末尾有与四维画像的对接速查表。**写汇报、讲意义时翻这份。**
+- `BRAFAR技术诊断过程整理.md`:讲**技术流程本身**。五个步骤各自吃什么、吐什么、为什么(Searcher / 双向重构 / Aligner / Fault Locator / Repairer),含 case1 的逐步走查,以及"诊断包 → 画像层"的 7 字段接口表。**写代码、做诊断层时翻这份。**
+- `第一周任务-候选数据资源清单与初步判断.md`:user persona 与 user profile 的区别、11 个候选公开数据集 × 四维画像映射总表、缺口分析与推荐最小组合;第六节是 Refactory / BRAFAR / CS1QA 的数据层实测记录(含真实数字与口径说明)。**找数据、算画像特征时翻这份。**
+- `动手实验指导-画像驱动反馈.md`:给房年朗从零手敲约 30 行、亲手重现"同题不同答"的 7 步教学指导(每步带检查点),末尾有"手写版 ↔ 仓库正式版"的对应表。**汇合会前想把原理讲透时做一遍。**
+- `Git终端操作复盘-带原理.md`:2026-07-23 把任务提交到 Gitee 团队仓库的全过程复盘(三个区 / 分支 / PR 的原理 + 可照抄的极简清单 + 踩过的两个坑:文件其实在别的分支、中文全角引号导致 commit 卡在 `>`)。**下次发 PR 前翻这份。**
+- `assets/brafar_pipeline.png`:BRAFAR 流水线配图,由 `demo/make_pipeline_figure.py` 生成。
+
+**demo/ —— 画像驱动个性化反馈(第一版,详见 `demo/README.md`)**
+- 跑法:`python demo/demo.py --check`(先核验 3 个错误案例确实失败,再输出 3 案例 × 3 画像的对照矩阵,结尾机器断言"每案例 3 份反馈两两不同")。纯标准库,无需装依赖。
+- `cases/cases.py`【房年朗 ✅】3 个 Refactory 真实错误案例 + 诊断包;`run_case_check.py`【房年朗 ✅】案例自检;`demo.py`【房年朗 ✅】引擎骨架(规则 → 四旋钮 → 组装反馈);`profiles_and_rules.py`【黄新意待填 ⬜】画像 / 6 条规则 / 话术片段,当前是房年朗放的可跑通示例填充。
+
+**scripts/ —— 数据层验证脚本**
+- `verify_refactory.py`、`verify_cs1qa.py`,用法与预期输出见 `scripts/README.md`(含 BRAFAR 装依赖必须先降 `setuptools==59.8.0` 的坑)。数据集体积大且许可各异,**不入库**,克隆到仓库外再以路径参数传入。
+
 ## 协作约定
 - 云端开发分支:claude/session-2lvlke;推送用 `git push -u origin <branch>`
+- **两个仓库的同步纪律(房年朗 2026-07-28 约定)**:
+  - **GitHub `francis-shift/1` 要实时更新** —— 本 CLAUDE.md 与 docs/、demo/ 有改动就提交推送,不要攒着
+  - **CLAUDE.md 永不进 Gitee 团队仓库**(它是本项目的私有长期记忆)
+  - 两边都有的同名文档(如 `docs/BRAFAR技术诊断过程整理.md`)改动后要**双向同步保持一致**;注意 Gitee 那份签出为 CRLF、GitHub 那份为 LF,比对时先 `tr -d '\r'` 再 diff,否则会误判成全文件差异
 - **文件交付方式(房年朗 2026-07-18 约定,目标是"由 Claude 直接放到桌面")**:
   - 会话运行在**用户本机**时(本地 Claude Code):生成/更新的文件直接复制到桌面(如 `~/Desktop` 或 Windows 桌面),同名文件**直接覆盖**,不询问
   - 会话运行在**云端**时(无法触达用户电脑):退而求其次,生成后立即主动以附件发出新版,不询问、不等用户索要
