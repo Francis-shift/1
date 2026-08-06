@@ -62,7 +62,19 @@
 - 权威实现 = 团队仓库 `demo/feedback_rules.py`;设计说明见 `docs/hxy_feedback_rules.md`
 - 房年朗早期的全部文档与四旋钮代码都把方向写反了(粗给新手、补丁给熟练者),2026-07-28 已全部更正
 
-## PR #1 评审与修复记录(截至 2026-07-28,均已修完并推送)
+## 第三次任务(2026-08-06 → 08-11 22:00,进行中)
+- **权威任务书 = 团队仓库 master 根目录的 `PROJECT_STATUS.md`(v4.4,黄新意维护)**,与群消息冲突时以它为准;每轮开工先读它,不要凭旧记忆干活
+- 本轮目标:可在 VS Code Extension Development Host 真实运行的智能 IDE v0.1,四人共同打通"打开错误代码 → 画像 → 客观诊断 → 个性化反馈 → IDE 高亮展示 → 脱敏行为记录"
+- **房年朗本轮分工:诊断引擎**。分支 `feat/fnl-diagnosis-engine-v01`,负责 `assistant_core/diagnosis/` 与 `examples/cases/`:
+  - 3 个旧案例整理成可直接打开的独立 .py 错误文件;案例扩到 ≥5 个(争取 6),覆盖 syntax / runtime / logic / boundary(test_failure)
+  - 实现"文件路径 → 合法 `diagnosis.v1` JSON":ast.parse + 受限子进程 + 超时 + traceback + 测试结果;不读画像;证据不足返回 unsupported/unknown 不硬编
+  - 表述纪律:是"受 BRAFAR 启发的简化诊断器",不宣称复刻 BRAFAR
+- **接口合同已冻结进 master**(`assistant_core/contracts/`,黄新意 08-06 合并):diagnosis.v1 必填 schema_version/diagnosis_id/generated_at/case_id/file_ref(须以 repo:|case:|hash: 开头)/language="python"/status/primary/test_summary/execution;时间用带时区 ISO 8601;字段要改先报黄新意,不得私改。校验:`python assistant_core/contracts/validate_examples.py`
+- 时间节点:08-07 各模块用固定输入独立运行;08-08 全链路第一次接通(固定样例换真实调用);08-10 异常处理+隐私检查+干净复现;08-11 22:00 合并 PR
+- 第四次任务 08-12→08-25 22:00(暑期硬截止):.vsix 打包、跨会话画像更新、诊断覆盖扩展、v0.1.0 发布
+
+## PR #1 评审与修复记录(已全部完成,PR 已合并)
+- **终局:PR #1 已被黄新意合并进 master(合并提交 `24af0a0`,含全部 8 条评审意见的修复)**;后续接口合同 PR(`!5`)也已进 master
 **黄新意 07-25 的 6 条行级评审意见**(逐条实测确认成立后修改,提交 `8a79a4c`):
 1. **case3 的 `patched` 本身是错的**(最严重)。实测三处不符:x 等于首元素返回 1(应 0)、单元素且相等返回 `None`、全重复且相等返回 1。修法:先判空 + `x < seq[0]`→`x <= seq[0]` + `x >= seq_enum[j][1]`→`x > seq_enum[j][1]`
 2. **case2 诊断文字有事实错误**。"非空时兜底应是 `len(seq)` 而不是 `i+1`"不成立——循环走完后 `i = len(seq)-1`,`i+1` 恒等于 `len(seq)`;真正缺陷只有空序列
