@@ -71,7 +71,8 @@
   - 表述纪律:是"受 BRAFAR 启发的简化诊断器",不宣称复刻 BRAFAR
 - **接口合同已冻结进 master**(`assistant_core/contracts/`,黄新意 08-06 合并):diagnosis.v1 必填 schema_version/diagnosis_id/generated_at/case_id/file_ref(须以 repo:|case:|hash: 开头)/language="python"/status/primary/test_summary/execution;时间用带时区 ISO 8601;字段要改先报黄新意,不得私改。校验:`python assistant_core/contracts/validate_examples.py`
 - 时间节点:08-07 各模块用固定输入独立运行;08-08 全链路第一次接通(固定样例换真实调用);08-10 异常处理+隐私检查+干净复现;08-11 22:00 合并 PR
-- **进度(2026-08-07):诊断引擎已完成并推送**,分支 `feat/fnl-diagnosis-engine-v01` 提交 `fabd69c`(引擎 + 6 案例库 + 12 项测试,34 项全过,输出过团队 schema 校验),**待在 Gitee 页面创建 PR**;黄新意 08-08 集成时 `from assistant_core.diagnosis import diagnose` 即可
+- **进度(2026-08-07):诊断引擎已完成并推送**,分支 `feat/fnl-diagnosis-engine-v01` 最新提交 `a4fca5f`(引擎 + 6 案例库 + 15 项测试,37 项全过,输出过团队 schema 校验),**待在 Gitee 页面创建 PR**;黄新意 08-08 集成时 `from assistant_core.diagnosis import diagnose` 即可
+- **自查修复(2026-08-07,`a4fca5f`)**:诊断输出曾会外泄绝对路径(异常消息如 FileNotFoundError、返回值 repr 三条向量实测复现),违反任务书硬验收第 8 条;修法是输出唯一出口 `_finish()` 深度消毒(整段路径含文件名替换为 `<abs_path>`)。**教训(第三次踩同根坑)**:最初的隐私测试只跑自家六案例——它们永远不产出路径,测试空过;隐私/防御类测试必须构造**对抗性输入**(故意把敏感内容塞进异常与返回值),不能只测"准备好的干净样本"。另:隐私断言要在原始字符串值上匹配,别在 JSON 转义文本上匹配(代码片段的 `e:` 会和转义 `\n` 拼成假盘符误报)
 - 案例库核验记录:Refactory 全部 1783 份真实错误程序经 ast.parse 逐份核验**无一份语法错误**(平台入库前已做语法检查),故语法案例只能人工构造——这个事实写进了 `examples/cases/README.md`,答辩被问"为什么语法案例不是真实数据"时用
 - 第四次任务 08-12→08-25 22:00(暑期硬截止):.vsix 打包、跨会话画像更新、诊断覆盖扩展、v0.1.0 发布
 
